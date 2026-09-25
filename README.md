@@ -22,8 +22,10 @@
 - 📱 Responsive layouts for phones, tablets, and desktops
 - 🎛️ Swipeable quick-tune dial with previous and next controls
 - 🔎 Instant search and Sinhala, Tamil, or English filters
-- ❤️ Favourite-station and volume persistence
-- 🌓 Light and dark themes
+- ❤️ Multiple favourites and recent-listening history
+- 🔗 Shareable station links for quick recommendations
+- ⏱️ Sleep timer plus mute and volume restoration
+- 🌓 System, dark, and light themes
 - ⌨️ Keyboard and Media Session controls
 - ♿ Accessible controls, focus states, and reduced-motion support
 - ⚡ No framework, bundler, account, analytics, or autoplay
@@ -52,6 +54,7 @@ Open [http://localhost:8000](http://localhost:8000) in your browser.
 |---|---|
 | `Space` | Play or pause |
 | `←` / `→` | Previous or next station |
+| `M` | Mute or restore volume |
 | `Ctrl/Cmd + K` | Focus station search |
 
 ## 🗂️ Project Structure
