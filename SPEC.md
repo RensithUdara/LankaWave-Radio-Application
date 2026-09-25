@@ -82,20 +82,22 @@ Each station uses this shape:
 
 - LankaWave identity
 - Live-state indicator
-- Light/dark theme control
+- System, dark, and light theme control
 
 ### Main Player
 
 - Current-station artwork and metadata
 - Idle, connecting, playing, buffering, error, and no-stream states
-- Previous, play/pause, next, favourite, and volume controls
+- Previous, play/pause, next, multiple-favourite, mute, and volume controls
+- Shareable links that open directly on the selected station
+- 15, 30, 60, and 90 minute sleep timer options
 - Animated visualizer only while playing
 - Quick-tune station carousel with drag and touch swipe
 
 ### Station Browser
 
 - Search by station name, language, or frequency
-- Combined language filters
+- Combined language, favourites, and recently played filters
 - Responsive one-, two-, or three-column station layout
 - Clear active, hover, focus, and empty states
 
@@ -156,7 +158,10 @@ Text does not scale directly with viewport width. Breakpoints define stable type
 - [ ] Search, combined filters, empty state, and reset work.
 - [ ] Playback states and retry behavior match the state table.
 - [ ] Keyboard shortcuts work outside inputs.
-- [ ] Last station, favourite, theme, and volume persist safely.
+- [ ] Last station, favourites, recent history, theme, and volume persist safely.
+- [ ] Shared station links restore the selected station.
+- [ ] Mute restores the previous audible volume.
+- [ ] Sleep timer pauses playback at the selected interval.
 - [ ] The app still loads when `localStorage` is blocked.
 - [ ] Missing station images show initials.
 - [ ] Privacy page is responsive and reachable.
