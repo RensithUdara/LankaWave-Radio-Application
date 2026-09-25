@@ -1,0 +1,218 @@
+[
+  {
+    "id": "hiru-fm",
+    "name": "Hiru FM",
+    "lang": "Sinhala",
+    "freq": "96.7",
+    "url": "https://radio.lotustechnologieslk.net:2020/stream/hirufmgarden",
+    "logo": "https://image.winudf.com/v2/image1/Y29tLmhpcnVmbS5yZWRyb3NlbWVkaWFfaWNvbl8xNjA0ODM4Njk0XzAyMg/icon.webp?w=280&fakeurl=1&type=.png"
+  },
+  {
+    "id": "neth-fm",
+    "name": "Neth FM",
+    "lang": "Sinhala",
+    "freq": "93.4",
+    "url": "https://cp11.serverse.com/proxy/nethfm/stream",
+    "logo": "https://nethfm.lk/radio/NETH%20FM%20Live%20Radio_files/neth1.jpg"
+  },
+  {
+    "id": "gold-fm",
+    "name": "Gold FM",
+    "lang": "English",
+    "freq": "99.6",
+    "url": "https://radio.lotustechnologieslk.net:2020/stream/goldfmgarden",
+    "logo": "https://www.goldfm.lk/images/lllistenlivelogo.jpg"
+  },
+  {
+    "id": "sun-fm",
+    "name": "Sun FM",
+    "lang": "English",
+    "freq": "98.8",
+    "url": "https://radio.lotustechnologieslk.net:2020/stream/sunfmgarden",
+    "logo": "https://www.sunfm.lk/assets/images/liveradio/logo.png"
+  },
+  {
+    "id": "shakthi-fm",
+    "name": "Shakthi FM",
+    "lang": "Tamil",
+    "freq": "104.1",
+    "url": "https://mbc.thestreamtech.com:8086/stream",
+    "logo": "https://play-lh.googleusercontent.com/PL_mgkbJ7_lzMFuiF9VRZmgr5Zcq2Og5TEkH-FWi91oZpZlVHqj2--ax5GfNz7gCFtojwbIL0HG2fI4Km8vg=w240-h480-rw"
+  },
+  {
+    "id": "sooriyan-fm",
+    "name": "Sooriyan FM",
+    "lang": "Tamil",
+    "freq": "103.4",
+    "url": "https://radio.lotustechnologieslk.net:8006/",
+    "logo": "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcR40bvCXRsbm7s4PsgviovVSUdInoLIyvZpCQvUCLRnv0OuOAyBko_Cv4k&s=10"
+  },
+  {
+    "id": "star-fm",
+    "name": "Star FM",
+    "lang": "Tamil",
+    "freq": "101.9",
+    "url": "https://stream.starfm.lk:12025/stream",
+    "logo": "https://www.starfm.lk/favicon.ico"
+  },
+  {
+    "id": "ran-fm",
+    "name": "Ran FM",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://a3.asurahosting.com/listen/ranfm/radio.mp3",
+    "logo": "http://ranfm.lk/images/logoranFM.png"
+  },
+  {
+    "id": "y-fm",
+    "name": "Y FM",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://mbc.thestreamtech.com:7032/",
+    "logo": "https://image.pngaaa.com/904/1532904-middle.png"
+  },
+  {
+    "id": "siyatha-fm",
+    "name": "Siyatha FM",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://srv01.onlineradio.voaplus.com/siyathafm",
+    "logo": "https://i0.wp.com/voa.lk/wp-content/uploads/2017/09/435.png?ssl=1"
+  },
+  {
+    "id": "classic-radio",
+    "name": "Classic Radio",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://cp11.serverse.com/proxy/classic/stream",
+    "logo": "https://cdn.onlineradiobox.com/img/logo/8/78418.v2.png"
+  },
+  {
+    "id": "lakhanda",
+    "name": "Lakhanda",
+    "lang": "Sinhala",
+    "freq": "97.4",
+    "url": "https://cp12.serverse.com/proxy/itnfm?mp=/stream",
+    "logo": "https://cdn.onlineradiobox.com/img/fblogo/9/31169.v2.png"
+  },
+  {
+    "id": "rangiri-sri-lanka",
+    "name": "Rangiri Sri Lanka",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://rangiri.radioca.st/stream",
+    "logo": "images/rangiri.jpeg"
+  },
+  {
+    "id": "kiss-fm",
+    "name": "Kiss FM",
+    "lang": "English",
+    "freq": "",
+    "url": "https://srv02.onlineradio.voaplus.com/kissfm",
+    "logo": "https://kissfm.lk/kisslogo.png"
+  },
+  {
+    "id": "legends-fm",
+    "name": "Legends 96.6 FM",
+    "lang": "English",
+    "freq": "96.6",
+    "url": "https://mbc.thestreamtech.com:8585/stream",
+    "logo": "https://legends966.com/images/legends966.png"
+  },
+  {
+    "id": "vasantham-fm",
+    "name": "Vasantham FM",
+    "lang": "Tamil",
+    "freq": "",
+    "url": "https://cp12.serverse.com/proxy/vasanthamfm?mp=/stream",
+    "logo": "https://www.vasanthamfm.lk/wp-content/uploads/2023/05/Vasantham-FM.svg"
+  },
+  {
+    "id": "radio-plus",
+    "name": "Radio Plus",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://altair.streamerr.co/stream/8036",
+    "logo": "https://radioplus.lk/wp-content/uploads/2024/04/Radio-plus-Logo-2-2.png"
+  },
+  {
+    "id": "lite",
+    "name": "103.1 LITE FM - DWVA",
+    "lang": "english",
+    "freq": "",
+    "url": "https://stream-178.zeno.fm/r8pmp16khf9uv?zt=eyJhbGciOiJIUzI1NiJ9.eyJzdHJlYW0iOiJyOHBtcDE2a2hmOXV2IiwiaG9zdCI6InN0cmVhbS0xNzguemVuby5mbSIsInRtIjpmYWxzZSwicnR0bCI6NSwianRpIjoiWnNlblZkQTNUaXE3UkFhXy1OaHJmZyIsImlhdCI6MTc3NTk5MTc0NCwiZXhwIjoxNzc1OTkxODA0fQ.ds0pf7JWT67FfqMWuimjGOjQWirdes3-Wvaxmk4rp8Q",
+    "logo": "https://cdn.radio-addict.com/media/stream/43b54b4c-f7f2-4f85-813b-ee8db50e1204_5F931DA62DEB1B4BEB0ACF0DDC4A7A6F_647334857_122163082388742106_8776080832089285863_n.jpg"
+  },
+  {
+    "id": "slbc-tamil",
+    "name": "SLBC Tamil National Service",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://stream-32.zeno.fm/xekhrn4zetzuv?zs=KXT1gTNYSemcxyslV6-vdA",
+    "logo": "https://radiosindia.com/images/favicon.ico"
+  },
+  {
+    "id": "kothmale",
+    "name": "Kothmale FM",
+    "lang": "sinhala",
+    "freq": "",
+    "url": "https://s11.myradiostream.com:25116/listen.mp3",
+    "logo": "https://kothmalefm.lk/images/3ee4162b8a1d0c8d68b7f4a210f0d077.png"
+  },
+  {
+    "id": "real-radio-sri-lanka",
+    "name": "Real Radio Sri Lanka 97.1",
+    "lang": "colombo",
+    "freq": "",
+    "url": "https://srv02.onlineradio.voaplus.com/realfm",
+    "logo": "https://liveonlineradio.net/wp-content/uploads/2012/10/real-radio-97-1.jpg"
+  },
+  {
+    "id": "hadawatha-fm",
+    "name": "Hadawatha FM",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://radio-station.hadawatha.lk/listen/hadawatha-fm/radio.mp3",
+    "logo": "https://hadawatha.lk/wp-content/uploads/2023/12/Hadawatha-FM-Logo.png"
+  },
+  {
+    "id": "laksara",
+    "name": "Laksara",
+    "lang": "sinhala",
+    "freq": "",
+    "url": "https://5a1178b42cc03.streamlock.net/laksara/laksara/chunklist_w1617919055.m3u8",
+    "logo": "https://cdn.onlineradiobox.com/img/fblogo/3/65133.v4.png"
+  },
+  {
+    "id": "gee-fm",
+    "name": "Gee FM",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://stream.zeno.fm/jiylwkly3ufvv",
+    "logo": "https://blogger.googleusercontent.com/img/a/AVvXsEjkuQgHcKfcC9HtAeMApylq37BY9dtsOnMfLx5RL6J_O0tFbvpiTRRML8aSWNJj0R2kZf_G3hjUvmBALtqIzzwiHJf9nYVME-WWfiC4raSd2We6mWKHGrxq-fI0z-Gn6xOYKWyDy-5kQerWl65E_7Net0kgcm68NFktBtCTzU25yNwfR88GohaQTcMyLTs"
+  },
+  {
+    "id": "dreamzlanka",
+    "name": "DreamzLanka FM",
+    "lang": "Sinhala",
+    "freq": "",
+    "url": "https://radio-station.hadawatha.lk/listen/dreamzlanka-fm/radio.mp3",
+    "logo": "https://dreamzlanka.com/wp-content/uploads/2021/08/DreamzLanka-Logo.png"
+  },
+  {
+    "id": "freefm-lk",
+    "name": "freefm.lk",
+    "lang": "sinhala",
+    "freq": "",
+    "url": "https://stream-49.zeno.fm/1tcs4fbw7rquv?zs=uMl9BSttRSuqxlf3fWqc8g",
+    "logo": "https://freefm.lk/wp-content/uploads/2020/09/Free-FM-Logo.png"
+  },
+  {
+    "id": "jothi-fm",
+    "name": "Jothi FM",
+    "lang": "english",
+    "freq": "",
+    "url": "https://radio-station.hadawatha.lk/listen/jothi-fm/radio.mp3",
+    "logo": "https://cdn.onlineradiobox.com/img/fblogo/5/112665.v2.png"
+  }
+]

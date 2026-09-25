@@ -1,8 +1,12 @@
 node_modules/
 dist/
 *.log
+.tmp/
+.vercel/
 
 venv/
 __pycache__/
 *.exe
 build/
+
+.vercel
