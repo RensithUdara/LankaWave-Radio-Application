@@ -14,6 +14,8 @@ let activeFilter = 'all';
 let searchQuery = '';
 let onCardSelect = null; /* callback(station) */
 let activeStationId = null;
+let favouriteIds = new Set();
+let recentIds = [];
 
 /* ── Init ─────────────────────────────────────────────── */
 export function init(elements, stationList, selectCallback) {
@@ -28,7 +30,7 @@ export function init(elements, stationList, selectCallback) {
     filterBtns = [...document.querySelectorAll('.filter')];
     filterBtns.forEach(btn => {
         btn.addEventListener('click', () => {
-            activeFilter = btn.dataset.lang;
+            activeFilter = btn.dataset.filter;
             filterBtns.forEach(b => {
                 b.classList.toggle('active', b === btn);
                 b.setAttribute('aria-pressed', b === btn);
@@ -49,8 +51,8 @@ export function init(elements, stationList, selectCallback) {
         searchQuery = '';
         activeFilter = 'all';
         filterBtns.forEach(b => {
-            b.classList.toggle('active', b.dataset.lang === 'all');
-            b.setAttribute('aria-pressed', b.dataset.lang === 'all');
+            b.classList.toggle('active', b.dataset.filter === 'all');
+            b.setAttribute('aria-pressed', b.dataset.filter === 'all');
         });
         applyFilters();
     });
@@ -60,8 +62,15 @@ export function init(elements, stationList, selectCallback) {
 
 /* ── Filtering ────────────────────────────────────────── */
 function applyFilters() {
-    const filtered = stations.filter(s => {
-        const matchLang = activeFilter === 'all' || s.lang.toLowerCase() === activeFilter.toLowerCase();
+    let source = stations;
+    if (activeFilter === 'recent') {
+        source = recentIds.map(id => stations.find(s => s.id === id)).filter(Boolean);
+    }
+
+    const filtered = source.filter(s => {
+        const matchLang = activeFilter === 'all' || activeFilter === 'recent' ||
+            (activeFilter === 'favourites' && favouriteIds.has(s.id)) ||
+            s.lang.toLowerCase() === activeFilter.toLowerCase();
         const matchSearch = !searchQuery ||
             s.name.toLowerCase().includes(searchQuery) ||
             s.lang.toLowerCase().includes(searchQuery) ||
@@ -79,7 +88,15 @@ function renderGrid(list) {
     if (list.length === 0) {
         grid.style.display = 'none';
         emptyState.hidden = false;
-        countEl.textContent = '';
+        const message = emptyState.querySelector('p');
+        if (message) {
+            message.textContent = activeFilter === 'favourites'
+                ? 'No favourite stations yet.'
+                : activeFilter === 'recent'
+                    ? 'Your recently played stations will appear here.'
+                    : 'No stations match that search.';
+        }
+        countEl.textContent = '0 stations';
         return;
     }
 
@@ -92,6 +109,7 @@ function renderGrid(list) {
         card.className = 'card' + (s.id === activeStationId ? ' active' : '');
         card.setAttribute('role', 'listitem');
         card.setAttribute('aria-label', `Play ${s.name}`);
+        if (favouriteIds.has(s.id)) card.setAttribute('aria-label', `Play favourite station ${s.name}`);
         card.dataset.id = s.id;
 
         const hue = getHue(s);
@@ -122,6 +140,12 @@ function renderGrid(list) {
         detail.textContent = [s.lang, s.freq ? `${s.freq} MHz` : ''].filter(Boolean).join(' • ');
         body.appendChild(nameEl);
         body.appendChild(detail);
+        if (favouriteIds.has(s.id)) {
+            const favouriteMark = document.createElement('span');
+            favouriteMark.className = 'card__favourite';
+            favouriteMark.textContent = 'Favourite';
+            body.appendChild(favouriteMark);
+        }
 
         /* play icon */
         const playBtn = document.createElement('div');
@@ -146,6 +170,14 @@ export function setActiveCard(stationId) {
     grid.querySelectorAll('.card').forEach(c => {
         c.classList.toggle('active', c.dataset.id === stationId);
     });
+}
+
+export function setCollections(favourites, recent) {
+    favouriteIds = new Set(favourites);
+    recentIds = recent;
+    const count = document.getElementById('favouriteCount');
+    if (count) count.textContent = String(favouriteIds.size);
+    applyFilters();
 }
 
 /* ── Focus search ─────────────────────────────────────── */
