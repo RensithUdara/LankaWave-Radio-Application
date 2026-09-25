@@ -37,3 +37,11 @@
   .card__detail{font-size:.7rem}
   .footer{padding-bottom:100px}
 }
+
+/* Collection filters */
+.filter{display:inline-flex;align-items:center;gap:7px}
+.filter__count{min-width:18px;height:18px;display:inline-grid;place-items:center;padding-inline:4px;border-radius:9px;background:color-mix(in srgb,currentColor 13%,transparent);font-size:.62rem}
+.filter.active .filter__count{background:var(--accent);color:#fff}
+.card__favourite{display:inline-flex;align-items:center;gap:4px;margin-top:6px;color:var(--accent);font-size:.62rem;font-weight:800;text-transform:uppercase;letter-spacing:.08em}
+.card__favourite::before{content:'♥';font-size:.68rem}
+.card:hover .card__favourite,.card.active .card__favourite{color:var(--accent-hover)}
