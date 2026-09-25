@@ -1,5 +1,5 @@
 /**
- * main.js — Boot, wiring, keyboard, Media Session.
+ * main.js - Application boot, state wiring, keyboard controls, and media session.
  */
 
 import * as player from './player.js';
@@ -7,312 +7,375 @@ import * as carousel from './carousel.js';
 import * as browse from './browse.js';
 import * as store from './store.js';
 
-let stations = [];
+const THEME_MODES = ['system', 'dark', 'light'];
+const systemTheme = window.matchMedia('(prefers-color-scheme: dark)');
 
-/* ── Theme ─────────────────────────────────────────────── */
+let stations = [];
+let favourites = [];
+let recentStations = [];
+let sleepTimeout = null;
+let toastTimeout = null;
+let lastAudibleVolume = 0.8;
+
 function initTheme() {
-    const saved = store.get('theme');
-    const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-    const theme = saved || (prefersDark ? 'dark' : 'light');
-    applyTheme(theme);
+    const saved = store.get('themeMode') || store.get('theme');
+    const mode = THEME_MODES.includes(saved) ? saved : 'system';
+    applyTheme(mode);
 
     document.getElementById('themeToggle').addEventListener('click', () => {
-        const current = document.documentElement.getAttribute('data-theme') || 'dark';
-        applyTheme(current === 'dark' ? 'light' : 'dark');
+        const current = document.documentElement.dataset.themeMode || 'system';
+        const next = THEME_MODES[(THEME_MODES.indexOf(current) + 1) % THEME_MODES.length];
+        applyTheme(next);
+        showToast(`Theme: ${capitalize(next)}`);
+    });
+
+    systemTheme.addEventListener('change', () => {
+        if (document.documentElement.dataset.themeMode === 'system') applyTheme('system', false);
     });
 }
 
-function applyTheme(theme) {
-    document.documentElement.setAttribute('data-theme', theme);
-    store.set('theme', theme);
+function applyTheme(mode, persist = true) {
+    const resolved = mode === 'system' ? (systemTheme.matches ? 'dark' : 'light') : mode;
+    document.documentElement.dataset.theme = resolved;
+    document.documentElement.dataset.themeMode = mode;
+    if (persist) store.set('themeMode', mode);
 
-    const btn = document.getElementById('themeToggle');
-    const sunIcon = btn.querySelector('.theme-icon--dark');
-    const moonIcon = btn.querySelector('.theme-icon--light');
+    const button = document.getElementById('themeToggle');
+    button.querySelectorAll('.theme-icon').forEach(icon => { icon.style.display = 'none'; });
+    const iconClass = mode === 'system' ? '.theme-icon--system' :
+        mode === 'dark' ? '.theme-icon--light' : '.theme-icon--dark';
+    button.querySelector(iconClass).style.display = '';
+    button.setAttribute('aria-label', `Theme: ${capitalize(mode)}. Activate to change.`);
+    button.title = `Theme: ${capitalize(mode)}`;
 
-    if (theme === 'light') {
-        sunIcon.style.display = 'none';
-        moonIcon.style.display = '';
-        btn.setAttribute('aria-label', 'Switch to dark mode');
-    } else {
-        sunIcon.style.display = '';
-        moonIcon.style.display = 'none';
-        btn.setAttribute('aria-label', 'Switch to light mode');
-    }
+    const themeMeta = document.querySelector('meta[name="theme-color"]');
+    if (themeMeta) themeMeta.content = resolved === 'dark' ? '#0b0f0d' : '#f5f3ed';
 }
 
-/* ── Boot ──────────────────────────────────────────────── */
 async function boot() {
     initTheme();
+
     try {
-        const res = await fetch('data/stations.json');
-        stations = await res.json();
-    } catch (e) {
-        console.error('Failed to load stations:', e);
+        const response = await fetch('data/stations.json');
+        if (!response.ok) throw new Error(`Station request failed: ${response.status}`);
+        stations = await response.json();
+    } catch (error) {
+        console.error('Failed to load stations:', error);
+        showToast('Could not load stations. Please refresh.');
         return;
     }
 
-    const audioEl = document.getElementById('audioEl');
-    player.init(audioEl);
+    player.init(document.getElementById('audioEl'));
+    restoreCollections();
+    restoreVolume();
 
-    /* Restore volume */
-    const savedVol = store.get('volume');
-    if (savedVol !== null) {
-        player.setVolume(savedVol);
-        document.getElementById('volumeSlider').value = savedVol;
-    }
+    carousel.init(document.getElementById('carouselTrack'), stations, handleCarouselSelect);
+    browse.init({
+        grid: document.getElementById('stationGrid'),
+        emptyState: document.getElementById('emptyState'),
+        countEl: document.getElementById('stationCount'),
+        searchInput: document.getElementById('searchInput'),
+        btnShowAll: document.getElementById('btnShowAll'),
+    }, stations, handleCardSelect);
+    syncCollections();
 
-    /* Init carousel */
-    carousel.init(
-        document.getElementById('carouselTrack'),
-        stations,
-        handleCarouselSelect
-    );
+    const requestedId = new URLSearchParams(location.search).get('station');
+    const loadId = requestedId || store.get('lastStation');
+    const initialIndex = Math.max(0, stations.findIndex(station => station.id === loadId));
+    if (stations[initialIndex]) carousel.selectByIndex(initialIndex, true);
 
-    /* Init browse grid */
-    browse.init(
-        {
-            grid: document.getElementById('stationGrid'),
-            emptyState: document.getElementById('emptyState'),
-            countEl: document.getElementById('stationCount'),
-            searchInput: document.getElementById('searchInput'),
-            btnShowAll: document.getElementById('btnShowAll'),
-        },
-        stations,
-        handleCardSelect
-    );
+    wirePopupPlayer();
+    wirePlayerControls();
+    wireFeatureControls();
 
-    /* Restore favourite or last station */
-    const favId = store.get('favourite');
-    const loadId = favId || store.get('lastStation');
-    if (loadId) {
-        const idx = stations.findIndex(s => s.id === loadId);
-        if (idx >= 0) {
-            carousel.selectByIndex(idx, true);
-            /* setStation updates UI without playing */
-            player.setStation(stations[idx]);
-            browse.setActiveCard(stations[idx].id);
-            updateUI(stations[idx]);
-        }
-    } else if (stations.length) {
-        player.setStation(stations[0]);
-        browse.setActiveCard(stations[0].id);
-        updateUI(stations[0]);
-    }
+    document.addEventListener('player:statechange', event => {
+        const { state, station, statusText } = event.detail;
+        updatePlayerStatus(state, statusText);
+        updateMediaSession(station);
+        if (state === 'playing' && station) recordRecent(station.id);
+    });
+    document.addEventListener('keydown', handleKeydown);
+}
 
-    /* Popup Player Scroll Reveal */
-    const popPlayer = document.getElementById('popupPlayer');
+function restoreCollections() {
+    const savedFavourites = store.get('favourites');
+    const legacyFavourite = store.get('favourite');
+    favourites = Array.isArray(savedFavourites) ? savedFavourites : legacyFavourite ? [legacyFavourite] : [];
+    favourites = favourites.filter(id => stations.some(station => station.id === id));
+    recentStations = Array.isArray(store.get('recentStations')) ? store.get('recentStations') : [];
+    recentStations = recentStations.filter(id => stations.some(station => station.id === id)).slice(0, 8);
+    store.set('favourites', favourites);
+    store.remove('favourite');
+}
+
+function restoreVolume() {
+    const saved = store.get('volume');
+    const savedVolume = Number(saved);
+    const volume = saved !== null && Number.isFinite(savedVolume)
+        ? Math.max(0, Math.min(1, savedVolume))
+        : 0.8;
+    if (volume > 0) lastAudibleVolume = volume;
+    setVolume(volume, false);
+}
+
+function wirePopupPlayer() {
+    const popup = document.getElementById('popupPlayer');
     const playerSection = document.querySelector('.player');
-    window.addEventListener('scroll', () => {
-        if (!playerSection || !popPlayer) return;
+    const updateVisibility = () => {
         const threshold = playerSection.offsetTop + playerSection.offsetHeight - 50;
-        const isVisible = window.scrollY > threshold;
-        popPlayer.classList.toggle('visible', isVisible);
-        popPlayer.setAttribute('aria-hidden', String(!isVisible));
-        popPlayer.inert = !isVisible;
-    }, { passive: true });
+        const visible = window.scrollY > threshold;
+        popup.classList.toggle('visible', visible);
+        popup.setAttribute('aria-hidden', String(!visible));
+        popup.inert = !visible;
+    };
 
-    /* Popup Player Actions */
+    window.addEventListener('scroll', updateVisibility, { passive: true });
+    updateVisibility();
+
     document.getElementById('popPlay').addEventListener('click', () => player.toggle());
     document.getElementById('popPrev').addEventListener('click', () => carousel.prev());
     document.getElementById('popNext').addEventListener('click', () => carousel.next());
     document.getElementById('popPrevEdge').addEventListener('click', () => carousel.prev());
     document.getElementById('popNextEdge').addEventListener('click', () => carousel.next());
-    document.getElementById('popVolume').addEventListener('input', (e) => {
-        const v = parseFloat(e.target.value);
-        player.setVolume(v);
-        store.set('volume', v);
-        document.getElementById('volumeSlider').value = v; // sync main
-    });
+    document.getElementById('popVolume').addEventListener('input', event => setVolume(Number(event.target.value)));
     document.getElementById('popInfo').addEventListener('click', () => {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     });
+}
 
-    /* Listen for state changes */
-    document.addEventListener('player:statechange', (e) => {
-        const { state, station, statusText } = e.detail;
-        updatePlayerStatus(state, statusText);
-        updateMediaSession(station);
-    });
-
-    /* Controls */
-    document.getElementById('btnFav').addEventListener('click', () => {
-        const current = player.getStation();
-        if (!current) return;
-        const favId = store.get('favourite');
-        const btnFav = document.getElementById('btnFav');
-
-        if (favId === current.id) {
-            store.remove('favourite');
-            btnFav.classList.remove('active');
-        } else {
-            store.set('favourite', current.id);
-            btnFav.classList.add('active');
-        }
-    });
-
+function wirePlayerControls() {
     document.getElementById('btnPlay').addEventListener('click', () => player.toggle());
     document.getElementById('btnPrev').addEventListener('click', () => carousel.prev());
     document.getElementById('btnNext').addEventListener('click', () => carousel.next());
-
-    /* Carousel specific arrows -> auto play on click */
-    document.getElementById('btnCarouselPrev').addEventListener('click', () => { carousel.prev(); player.play(); });
-    document.getElementById('btnCarouselNext').addEventListener('click', () => { carousel.next(); player.play(); });
-
-    /* Volume */
-    document.getElementById('volumeSlider').addEventListener('input', (e) => {
-        const v = parseFloat(e.target.value);
-        player.setVolume(v);
-        store.set('volume', v);
+    document.getElementById('btnCarouselPrev').addEventListener('click', () => {
+        carousel.prev();
+        player.play();
     });
-
-    /* Keyboard */
-    document.addEventListener('keydown', handleKeydown);
+    document.getElementById('btnCarouselNext').addEventListener('click', () => {
+        carousel.next();
+        player.play();
+    });
+    document.getElementById('volumeSlider').addEventListener('input', event => setVolume(Number(event.target.value)));
+    document.getElementById('btnMute').addEventListener('click', toggleMute);
 }
 
-/* ── Selection handlers ───────────────────────────────── */
-function handleCarouselSelect(station, index) {
-    player.setStation(station);
-    browse.setActiveCard(station.id);
-    updateUI(station);
-    store.set('lastStation', station.id);
+function wireFeatureControls() {
+    document.getElementById('btnFav').addEventListener('click', toggleFavourite);
+    document.getElementById('btnShare').addEventListener('click', shareCurrentStation);
+    document.getElementById('sleepTimer').addEventListener('change', event => {
+        scheduleSleepTimer(Number(event.target.value));
+    });
+}
+
+function handleCarouselSelect(station) {
+    selectStation(station);
 }
 
 function handleCardSelect(station) {
-    const idx = stations.findIndex(s => s.id === station.id);
-    if (idx >= 0) carousel.selectByIndex(idx, true);
+    const index = stations.findIndex(item => item.id === station.id);
+    if (index >= 0) carousel.selectByIndex(index, true);
+    selectStation(station);
+    if (station.url) player.play();
+    document.querySelector('.player').scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function selectStation(station) {
     player.setStation(station);
     browse.setActiveCard(station.id);
     updateUI(station);
     store.set('lastStation', station.id);
-
-    /* start playback if URL available */
-    if (station.url) {
-        player.play();
-    }
-
-    /* scroll to player */
-    document.querySelector('.player').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    const url = new URL(location.href);
+    url.searchParams.set('station', station.id);
+    history.replaceState(null, '', url);
 }
 
-/* ── UI updates ───────────────────────────────────────── */
-function updateUI(station) {
-    const favId = store.get('favourite');
-    const btnFav = document.getElementById('btnFav');
-    if (favId === station.id) {
-        btnFav.classList.add('active');
+function toggleFavourite() {
+    const station = player.getStation();
+    if (!station) return;
+
+    if (favourites.includes(station.id)) {
+        favourites = favourites.filter(id => id !== station.id);
+        showToast(`${station.name} removed from favourites`);
     } else {
-        btnFav.classList.remove('active');
+        favourites = [station.id, ...favourites];
+        showToast(`${station.name} added to favourites`);
     }
 
+    store.set('favourites', favourites);
+    syncCollections();
+    updateFavouriteButton(station.id);
+}
+
+function recordRecent(stationId) {
+    recentStations = [stationId, ...recentStations.filter(id => id !== stationId)].slice(0, 8);
+    store.set('recentStations', recentStations);
+    syncCollections();
+}
+
+function syncCollections() {
+    browse.setCollections(favourites, recentStations);
+}
+
+async function shareCurrentStation() {
+    const station = player.getStation();
+    if (!station) return;
+    const url = new URL(location.href);
+    url.searchParams.set('station', station.id);
+    const shareData = { title: `${station.name} on LankaWave`, text: `Listen to ${station.name} live on LankaWave.`, url: url.href };
+
+    try {
+        if (navigator.share) {
+            await navigator.share(shareData);
+        } else {
+            await navigator.clipboard.writeText(url.href);
+            showToast('Station link copied');
+        }
+    } catch (error) {
+        if (error.name !== 'AbortError') showToast('Could not share this station');
+    }
+}
+
+function scheduleSleepTimer(minutes) {
+    clearTimeout(sleepTimeout);
+    sleepTimeout = null;
+    const status = document.getElementById('sleepStatus');
+
+    if (!minutes) {
+        status.textContent = '';
+        showToast('Sleep timer off');
+        return;
+    }
+
+    status.textContent = `Stops in ${minutes} min`;
+    sleepTimeout = setTimeout(() => {
+        player.pause();
+        document.getElementById('sleepTimer').value = '0';
+        status.textContent = '';
+        showToast('Sleep timer finished');
+    }, minutes * 60 * 1000);
+    showToast(`Sleep timer set for ${minutes} minutes`);
+}
+
+function toggleMute() {
+    const current = player.getVolume();
+    if (current > 0) {
+        lastAudibleVolume = current;
+        setVolume(0);
+    } else {
+        setVolume(lastAudibleVolume || 0.8);
+    }
+}
+
+function setVolume(volume, persist = true) {
+    const normalized = Math.max(0, Math.min(1, volume));
+    player.setVolume(normalized);
+    document.getElementById('volumeSlider').value = normalized;
+    document.getElementById('popVolume').value = normalized;
+    if (normalized > 0) lastAudibleVolume = normalized;
+    if (persist) store.set('volume', normalized);
+
+    const muteButton = document.getElementById('btnMute');
+    muteButton.classList.toggle('muted', normalized === 0);
+    muteButton.setAttribute('aria-label', normalized === 0 ? 'Unmute' : 'Mute');
+    muteButton.title = normalized === 0 ? 'Unmute' : 'Mute';
+}
+
+function updateUI(station) {
+    updateFavouriteButton(station.id);
     document.getElementById('playerName').textContent = station.name;
-    document.getElementById('playerLang').textContent = station.lang;
-    document.getElementById('playerFreq').textContent = station.freq ? `${station.freq} MHz` : '';
-
-    /* Popup player updates */
+    document.getElementById('playerLang').textContent = capitalize(station.lang);
+    document.getElementById('playerFreq').textContent = station.freq ? `${station.freq} MHz` : 'Online';
     document.getElementById('popName').textContent = station.name;
-    document.getElementById('popFreq').textContent = station.freq ? `${station.freq} MHz` : 'Web';
+    document.getElementById('popFreq').textContent = station.freq ? `${station.freq} MHz` : 'Online';
 
-    const popLogo = document.getElementById('popLogo');
-    const mainLogo = document.getElementById('mainLogo');
-
-    if (station.logo) {
-        const initials = station.name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-        [popLogo, mainLogo].forEach(logo => {
-            logo.textContent = initials;
-            logo.style.background = '';
+    const initials = station.name.split(/\s+/).slice(0, 2).map(word => word[0]).join('').toUpperCase();
+    const logos = [document.getElementById('popLogo'), document.getElementById('mainLogo')];
+    logos.forEach(logo => {
+        logo.textContent = initials;
+        const hue = carousel.getHue(station);
+        logo.style.background = `linear-gradient(135deg, hsl(${hue} 60% 35%), hsl(${hue} 50% 20%))`;
+        if (station.logo) {
             const image = document.createElement('img');
             image.src = station.logo;
             image.alt = '';
             image.addEventListener('error', () => image.remove(), { once: true });
             logo.appendChild(image);
-        });
-    } else {
-        const initials = station.name.split(/\s+/).slice(0, 2).map(w => w[0]).join('').toUpperCase();
-        popLogo.innerHTML = initials;
-        mainLogo.innerHTML = initials;
+        }
+    });
+}
 
-        const hue = carousel.getHue(station);
-        const grad = `linear-gradient(135deg, hsl(${hue} 60% 35%), hsl(${hue} 50% 20%))`;
-        popLogo.style.background = grad;
-        mainLogo.style.background = grad;
-    }
-
+function updateFavouriteButton(stationId) {
+    const button = document.getElementById('btnFav');
+    const active = favourites.includes(stationId);
+    button.classList.toggle('active', active);
+    button.setAttribute('aria-label', active ? 'Remove from favourites' : 'Add to favourites');
+    button.title = active ? 'Remove from favourites' : 'Add to favourites';
 }
 
 function updatePlayerStatus(state, text) {
-    const statusEl = document.getElementById('playerStatus');
-    const badge = document.getElementById('liveBadge');
+    const status = document.getElementById('playerStatus');
+    status.textContent = text;
+    status.className = 'player__status' + (state === 'error' || state === 'no-stream' ? ' error' : '');
 
-    statusEl.textContent = text;
-    statusEl.className = 'player__status' + (state === 'error' || state === 'no-stream' ? ' error' : '');
+    const active = state === 'playing' || state === 'buffering';
+    document.getElementById('liveBadge').classList.toggle('active', active);
+    document.getElementById('playerVisualizer').classList.toggle('active', state === 'playing');
+    document.getElementById('popViz').classList.toggle('active', state === 'playing');
 
-    const isActive = state === 'playing' || state === 'buffering';
-    badge.classList.toggle('active', isActive);
-
-    const viz = document.getElementById('playerVisualizer');
-    if (viz) viz.classList.toggle('active', state === 'playing');
-
-    const popViz = document.getElementById('popViz');
-    if (popViz) popViz.classList.toggle('active', state === 'playing');
-
-    const playIcons = document.querySelectorAll('.icon-play');
-    const pauseIcons = document.querySelectorAll('.icon-pause');
-
-    if (state === 'playing' || state === 'buffering') {
-        playIcons.forEach(i => i.style.display = 'none');
-        pauseIcons.forEach(i => i.style.display = '');
-    } else {
-        playIcons.forEach(i => i.style.display = '');
-        pauseIcons.forEach(i => i.style.display = 'none');
-    }
+    document.querySelectorAll('.icon-play').forEach(icon => { icon.style.display = active ? 'none' : ''; });
+    document.querySelectorAll('.icon-pause').forEach(icon => { icon.style.display = active ? '' : 'none'; });
 }
 
-/* ── Keyboard ─────────────────────────────────────────── */
-function handleKeydown(e) {
-    /* don't trigger while typing in search */
-    const isTyping = document.activeElement?.matches('input, textarea, select');
-
-    /* Ctrl/Cmd + K → focus search */
-    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
-        e.preventDefault();
+function handleKeydown(event) {
+    const typing = document.activeElement?.matches('input, textarea, select');
+    if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === 'k') {
+        event.preventDefault();
         browse.focusSearch();
         return;
     }
+    if (typing) return;
 
-    if (isTyping) return;
-
-    switch (e.key) {
-        case ' ':
-            e.preventDefault();
-            player.toggle();
-            break;
-        case 'ArrowLeft':
-            e.preventDefault();
-            carousel.prev();
-            break;
-        case 'ArrowRight':
-            e.preventDefault();
-            carousel.next();
-            break;
+    if (event.key === ' ') {
+        event.preventDefault();
+        player.toggle();
+    } else if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        carousel.prev();
+    } else if (event.key === 'ArrowRight') {
+        event.preventDefault();
+        carousel.next();
+    } else if (event.key.toLowerCase() === 'm') {
+        event.preventDefault();
+        toggleMute();
     }
 }
 
-/* ── Media Session ────────────────────────────────────── */
 function updateMediaSession(station) {
     if (!('mediaSession' in navigator) || !station) return;
-
+    const artwork = station.logo ? [{ src: station.logo }] : [];
     navigator.mediaSession.metadata = new MediaMetadata({
         title: station.name,
         artist: 'Live radio',
         album: 'LankaWave',
+        artwork,
     });
-
     navigator.mediaSession.setActionHandler('play', () => player.play());
     navigator.mediaSession.setActionHandler('pause', () => player.pause());
     navigator.mediaSession.setActionHandler('previoustrack', () => carousel.prev());
     navigator.mediaSession.setActionHandler('nexttrack', () => carousel.next());
 }
 
-/* ── Go ───────────────────────────────────────────────── */
+function showToast(message) {
+    const toast = document.getElementById('toast');
+    if (!toast) return;
+    clearTimeout(toastTimeout);
+    toast.textContent = message;
+    toast.classList.add('visible');
+    toastTimeout = setTimeout(() => toast.classList.remove('visible'), 2600);
+}
+
+function capitalize(value = '') {
+    return value.charAt(0).toUpperCase() + value.slice(1).toLowerCase();
+}
+
 boot();
