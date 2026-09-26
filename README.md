@@ -16,6 +16,10 @@
   <img alt="JavaScript" src="https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black">
 </p>
 
+## ℹ️ About
+
+LankaWave is a free, responsive web radio app for discovering and listening to live Sri Lankan radio stations in one place.
+
 ## ✨ Highlights
 
 - 🎧 Listen to live Sri Lankan stations in one tap
