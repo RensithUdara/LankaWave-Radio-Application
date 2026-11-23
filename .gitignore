@@ -10,4 +10,7 @@ __pycache__/
 build/
 
 .vercel
-config.bat
+.env
+.env.*
+.env.local
+.env.production
